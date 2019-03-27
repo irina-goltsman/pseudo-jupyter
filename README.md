@@ -1,4 +1,5 @@
-# Pseudo Jupyter Notebook (for MIPT Python 2019 demo on web)
+# Pseudo Jupyter Notebook
+### demo on Flask&HTML (MIPT 2019)
 
 ### Usage:
 ```
