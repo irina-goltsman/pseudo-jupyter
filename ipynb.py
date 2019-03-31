@@ -1,11 +1,36 @@
-from flask import jsonify
+import io
 import json
+import logging
+import sys
+
+from flask import jsonify, render_template
 
 
-def export(inputs, outputs):
-    with open('ipynb.json', 'r') as f:
+def render_notebook(inputs, outputs):
+    """"""
+    return render_template(
+        'jupyter.html',
+        cells=zip(range(len(inputs)), inputs, outputs)
+    )
+
+
+def execute_snippet(snippet):
+    """Temporary changes the standard output stream to capture exec output"""
+    temp_buffer = io.StringIO()
+
+    sys.stdout = temp_buffer
+    exec(snippet)
+    sys.stdout = sys.__stdout__
+    
+    return temp_buffer.getvalue()
+
+
+def export(inputs, outputs, filename='ipynb.json'):
+    """Exports current state to ipynb format"""
+    with open(filename, 'r') as f:  # json file with basic jupyter metadata
         ipynb_json = json.loads(f.read())
 
+    # add cell data in jupyter-like format
     for in_cell, out_cell in zip(inputs, outputs):
         cell_json = {
             'cell_type': 'code',
@@ -26,25 +51,23 @@ def export(inputs, outputs):
     return jsonify(ipynb_json)
 
 
-def get_cell_output(cell):
+def _get_cell_output(cell_json):
+    """Get info of type 'output'"""
     cell_stdouts = [
-        output for output in cell['outputs']
+        output for output in cell_json['outputs']
         if output.get('name', '') == 'stdout'
     ]
-    if cell_stdouts:
-        return ''.join(cell_stdouts[0]['text'])
-    else:
-        return ''
+    return ''.join(cell_stdouts[0]['text'])
 
 
-def is_valid_ipynb(ipynb_json):
+def _is_valid_ipynb(ipynb_json):
     if ipynb_json.get('cells') is None:
         return False
     return True
 
 
 def import_from_json(ipynb_json):
-    if not is_valid_ipynb(ipynb_json):
+    if not _is_valid_ipynb(ipynb_json):
         return ''
     inputs = []
     outputs = []
@@ -53,12 +76,13 @@ def import_from_json(ipynb_json):
             if cell['cell_type'] != 'code':
                 continue
             cell_input = ''.join(cell['source'])
-            # print(cell['outputs'])
-            cell_output = get_cell_output(cell)
+            cell_output = _get_cell_output(cell)
         except KeyError as e:
-            print(e)
+            logging.error(e)
             continue
+
         inputs.append(cell_input)
         outputs.append(cell_output)
-    print('Imported {} inputs, {} outputs'.format(len(inputs), len(outputs)))
+
+    logging.info('Imported {} inputs, {} outputs'.format(len(inputs), len(outputs)))
     return inputs, outputs
