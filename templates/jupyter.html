@@ -11,6 +11,7 @@
             outline-width: 2px;
           }
       </style>
+      <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
    </head>
    <body>
       <table>
@@ -22,7 +23,7 @@
                     <button formaction="/remove_cell/{{ item[0] }}" type="submit">Remove cell</button>
                     <br>
                     <textarea name="input{{ item[0] }}" cols="80" style='max-height: 300px'>{{ item[1] }}</textarea>
-                    <div style="width:300px; max-width:300px; display:block;">{{ item[2] }}</div> <!-- maybe don't show this when no output -->
+                    <div style="width:300px; max-width:300px; display:block; white-space: pre-wrap;">{{ item[2] }}</div> <!-- maybe don't show this when no output -->
                     <hr>
                 </td>
               </tr>

@@ -1,7 +1,7 @@
 import sys
 from io import StringIO
 
-from flask import Flask, request, render_template, redirect
+from flask import Flask, request, render_template, redirect, send_from_directory
 import ipynb
 
 
@@ -9,6 +9,11 @@ app = Flask(__name__)
 inputs = ['print("Type your code snippet here")']
 outputs = ['']
 
+
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(app.root_path, 'static'),
+                               'favicon.ico')
 
 def render_notebook(inputs, outputs):
     return render_template(
@@ -18,6 +23,7 @@ def render_notebook(inputs, outputs):
 
 
 def execute_snippet(snippet):
+    """Temporary changes the standard output stream to capture exec output"""
     temp_buffer = StringIO()
 
     sys.stdout = temp_buffer
