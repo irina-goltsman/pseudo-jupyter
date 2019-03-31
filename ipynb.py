@@ -29,7 +29,7 @@ def export(inputs, outputs):
 def get_cell_output(cell):
     cell_stdouts = [
         output for output in cell['outputs']
-        if output['name'] == 'stdout'
+        if output.get('name', '') == 'stdout'
     ]
     if cell_stdouts:
         return ''.join(cell_stdouts[0]['text'])
@@ -55,7 +55,8 @@ def import_from_json(ipynb_json):
             cell_input = ''.join(cell['source'])
             # print(cell['outputs'])
             cell_output = get_cell_output(cell)
-        except KeyError:
+        except KeyError as e:
+            print(e)
             continue
         inputs.append(cell_input)
         outputs.append(cell_output)
