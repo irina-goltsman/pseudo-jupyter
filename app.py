@@ -1,4 +1,6 @@
-from flask import Flask, request, render_template, jsonify
+from flask import Flask, request, render_template
+import ipynb
+
 
 app = Flask(__name__)
 inputs = ['"Type your code snippet here"']
@@ -59,74 +61,16 @@ def remove_cell(cell_id=0):
     return render_notebook()
 
 
-def ipynb_export():
-    global inputs
-    global outputs
-    ipynb_json = {
-        'metadata': {
-            'kernel_info': {},
-            'language_info': {
-                'name': 'python',
-                'version': '3.5'
-            }
-        },
-        'nbformat': 4,
-        'nbformat_minor': 0,
-        'cells': []
-    }
-
-    for in_cell, out_cell in zip(inputs, outputs):
-        cell_json = {
-            'cell_type': 'code',
-            'execution_count': None,
-            'metadata': {
-                'collapsed': True,
-                'scrolled': False,
-            },
-            'source': in_cell,
-            'outputs': [{
-                'output_type': 'stream',
-                'name': 'stdout',
-                'text': out_clel
-            }]
-        }
-        ipynb_json['cells'].append(cell_json)
-
-    return jsonify(ipynb_json)
-
-
-def ipynb_import(ipynb_json):
-    global inputs
-    global outputs
-    inputs.clear()
-    outputs.clear()
-    print(ipynb_json)
-    for cell in ipynb_json['cells']:
-        try:
-            if cell['cell_type'] != 'code':
-                continue
-            cell_input = '\n'.join(cell['source'])
-            # print(cell['outputs'])
-            cell_output = '\n'.join([
-                '\n'.join(out['data']['text/plain'])
-                for out in cell['outputs']
-                if out['output_type'] == 'execute_result'
-            ])
-        except KeyError:
-            continue
-        inputs.append(cell_input)
-        outputs.append(cell_output)
-    print(len(inputs), len(outputs))
-    return ''
-
-
 # https://nbformat.readthedocs.io/en/latest/format_description.html
 @app.route('/ipynb', methods=['GET', 'POST'])
-def ipynb():
+def ipynb_handler():
+    global inputs
+    global outputs
     if request.method == 'GET':
-        return ipynb_export()
+        return ipynb.export(inputs, outputs)
     elif request.method == 'POST':
-        return ipynb_import(request.get_json())
+        inputs, outputs = ipynb.import_from_json(request.get_json())
+        return ''  # why do I need it?
 
 
 if __name__ == "__main__":
