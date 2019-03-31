@@ -1,6 +1,11 @@
 # Pseudo Jupyter Notebook
 ### demo on Flask&HTML (MIPT 2019)
 
+
+### Flask official tutorial:
+http://flask.pocoo.org/docs/1.0/tutorial/
+
+
 ### Usage:
 ```
 pip3 install flask
