@@ -1,9 +1,12 @@
+import sys
+from io import StringIO
+
 from flask import Flask, request, render_template, redirect
 import ipynb
 
 
 app = Flask(__name__)
-inputs = ['"Type your code snippet here"']
+inputs = ['print("Type your code snippet here")']
 outputs = ['']
 
 
@@ -12,6 +15,16 @@ def render_notebook(inputs, outputs):
         'jupyter.html',
         cells=zip(range(len(inputs)), inputs, outputs)
     )
+
+
+def execute_snippet(snippet):
+    temp_buffer = StringIO()
+
+    sys.stdout = temp_buffer
+    exec(snippet)
+    sys.stdout = sys.__stdout__
+    
+    return temp_buffer.getvalue()
 
 
 @app.route('/', methods=['GET'])
@@ -29,7 +42,7 @@ def execute(cell_id=None):
 
     inputs[cell_id] = request.form['input{}'.format(cell_id)]
     try:
-        result = eval(inputs[cell_id])
+        result = execute_snippet(inputs[cell_id])
     except BaseException as e:
         result = str(e)
     outputs[cell_id] = result
