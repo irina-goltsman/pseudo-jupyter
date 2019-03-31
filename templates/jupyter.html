@@ -7,13 +7,16 @@
           {% for item in cells %}
             <form action="/execute_cell/{{ item[0] }}" method="post" id="form{{ item[0] }}">
               <tr>
-                <td><textarea name="input{{ item[0] }}" cols="80" rows="5">{{ item[1] }}</textarea></td>
+                <td>
+                    <textarea name="input{{ item[0] }}" cols="80" rows="5">{{ item[1] }}</textarea>
+                    <div>{{ item[2] }}</div> <!-- maybe don't show this when no output -->
+                    <hr>
+                </td>
                 <td>
                     <button type="submit">Execute cell</button>
                     <br>
                     <button formaction="/remove_cell/{{ item[0] }}" type="submit">Remove cell</button>
                 </td>
-                <td><textarea name="output{{ item[0] }}" cols="80" rows="5" disabled>{{ item[2] }}</textarea></td>
               </tr>
             </form>
           {% endfor %}
