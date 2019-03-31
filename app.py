@@ -6,6 +6,10 @@ import ipynb
 # the main Flask application object
 app = Flask(__name__)
 
+# create logger instance
+logger = logging.getLogger(__name__)
+logger.setLevel('INFO')
+
 # global variables to store the current state of our notebook
 inputs = ['print("Type your code snippet here")']
 outputs = ['']
@@ -33,7 +37,7 @@ def execute(cell_id=None):
     try:
         cell_id = int(cell_id)
     except ValueError as e:
-        logging.warning(e)
+        logger.warning(e)
         return redirect('/')
 
     try:
@@ -66,7 +70,7 @@ def remove_cell(cell_id=0):
             raise ValueError('Bad cell id')
     except ValueError as e:
         # do not change internal info
-        logging.warning(e)
+        logger.warning(e)
         return redirect('/')
 
     # remove related data
@@ -81,12 +85,17 @@ def ipynb_handler():
     Imports/exports notebook data in .ipynb format (a.k.a Jupyter Notebook)
     Docs: https://nbformat.readthedocs.io/en/latest/format_description.html
     """
+    global inputs
+    global outputs
     if request.method == 'GET':
         # return json representation of the notebook here
         return ipynb.export(inputs, outputs)
     elif request.method == 'POST':
         # update internal data
-        inputs, outputs = ipynb.import_from_json(request.get_json()) 
+        imported = ipynb.import_from_json(request.get_json())
+        # we can return None if json is not a valid ipynb
+        if imported:
+            inputs, outputs = imported
         # common practice for POST/PUT is returning empty json
         # when everything is 200 OK
         return jsonify({})
@@ -94,4 +103,4 @@ def ipynb_handler():
 
 # this makes your Flask application start
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)

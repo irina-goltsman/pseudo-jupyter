@@ -6,6 +6,11 @@ import sys
 from flask import jsonify, render_template
 
 
+# create logger instance
+logger = logging.getLogger(__name__)
+logger.setLevel('INFO')
+
+
 def render_notebook(inputs, outputs):
     """"""
     return render_template(
@@ -26,7 +31,7 @@ def execute_snippet(snippet):
 
 
 def export(inputs, outputs, filename='ipynb.json'):
-    """Exports current state to ipynb format"""
+    """Export current state to ipynb format"""
     with open(filename, 'r') as f:  # json file with basic jupyter metadata
         ipynb_json = json.loads(f.read())
 
@@ -52,37 +57,45 @@ def export(inputs, outputs, filename='ipynb.json'):
 
 
 def _get_cell_output(cell_json):
-    """Get info of type 'output'"""
+    """Get plain-text output of the cell"""
     cell_stdouts = [
         output for output in cell_json['outputs']
         if output.get('name', '') == 'stdout'
     ]
-    return ''.join(cell_stdouts[0]['text'])
+    return '\n'.join(
+        [''.join(out['text']) for out in cell_stdouts]
+    )
 
 
 def _is_valid_ipynb(ipynb_json):
-    if ipynb_json.get('cells') is None:
-        return False
-    return True
+    return (
+        ipynb_json.get('cells') is not None and
+        ipynb_json.get('metadata') is not None and
+        ipynb_json.get('nbformat', -1) > 0 and
+        ipynb_json.get('nbformat_minor', -1) > 0
+    )
 
 
 def import_from_json(ipynb_json):
     if not _is_valid_ipynb(ipynb_json):
-        return ''
+        logger.warning('Bad ipynb')
+        return None
     inputs = []
     outputs = []
     for cell in ipynb_json['cells']:
         try:
+            # We handle only code-contatining cells
+            # No Markdown, HTML etc
             if cell['cell_type'] != 'code':
                 continue
             cell_input = ''.join(cell['source'])
             cell_output = _get_cell_output(cell)
         except KeyError as e:
-            logging.error(e)
+            logger.error(e)
             continue
 
         inputs.append(cell_input)
         outputs.append(cell_output)
 
-    logging.info('Imported {} inputs, {} outputs'.format(len(inputs), len(outputs)))
+    logger.info('Imported {} inputs, {} outputs'.format(len(inputs), len(outputs)))
     return inputs, outputs
