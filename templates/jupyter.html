@@ -19,6 +19,9 @@
             <form action="/execute_cell/{{ item[0] }}" method="post" id="form{{ item[0] }}">
               <tr>
                 <td>
+                  In [{% if item[3] > 0 %}{{ item[3] }}{% else %} {% endif %}]
+                </td>
+                <td>
                     <button type="submit">Execute cell</button>
                     <button formaction="/remove_cell/{{ item[0] }}" type="submit">Remove cell</button>
                     <br>
@@ -39,4 +42,3 @@
       <script src="{{ url_for('static',filename='js/scripts.js') }}"></script>
    </body>
 </html>
- 

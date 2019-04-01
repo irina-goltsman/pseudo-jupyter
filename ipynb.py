@@ -11,11 +11,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel('INFO')
 
 
-def render_notebook(inputs, outputs):
+def render_notebook(inputs, outputs, execute_counters):
     """"""
     return render_template(
         'jupyter.html',
-        cells=zip(range(len(inputs)), inputs, outputs)
+        cells=zip(range(len(inputs)), inputs, outputs, execute_counters)
     )
 
 

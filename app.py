@@ -14,6 +14,8 @@ logger.setLevel('INFO')
 # global variables to store the current state of our notebook
 inputs = ['print("Type your code snippet here")']
 outputs = ['']
+execute_counters = [0]
+current_execute_count = 0
 
 
 @app.route('/favicon.ico')
@@ -29,7 +31,7 @@ def favicon():
 def get():
     """This triggers when you first open the site with your browser"""
     assert len(inputs) == len(outputs)
-    return ipynb.render_notebook(inputs, outputs)
+    return ipynb.render_notebook(inputs, outputs, execute_counters)
 
 
 @app.route('/execute_cell/<cell_id>', methods=['POST'])
@@ -41,7 +43,11 @@ def execute(cell_id=None):
         logger.warning(e)
         return redirect('/')
 
+    global current_execute_count
     try:
+        current_execute_count += 1
+        execute_counters[cell_id] = current_execute_count
+        
         inputs[cell_id] = request.form['input{}'.format(cell_id)]
         result = ipynb.execute_snippet(inputs[cell_id])
     except BaseException as e:
@@ -57,6 +63,7 @@ def add_cell():
     """Appends empty cell data to the end"""
     inputs.append('')
     outputs.append('')
+    execute_counters.append(0)
     return redirect('/')
 
 
@@ -77,6 +84,7 @@ def remove_cell(cell_id=0):
     # remove related data
     inputs.pop(cell_id)
     outputs.pop(cell_id)
+    execute_counters.pop(cell_id)
     return redirect('/')
 
 
