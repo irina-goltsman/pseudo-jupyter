@@ -49,7 +49,7 @@ def execute(cell_id=None):
         execute_counters[cell_id] = current_execute_count
         
         inputs[cell_id] = request.form['input{}'.format(cell_id)]
-        result = ipynb.execute_snippet(inputs[cell_id])
+        result = ipynb.execute_snippet(inputs[cell_id], globals())
     except BaseException as e:
         # anything could happen inside, even `exit()` call
         result = str(e)
