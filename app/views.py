@@ -1,21 +1,15 @@
-from flask import Flask, jsonify, request, redirect, send_from_directory
-import logging
+# -*- coding: utf-8 -*-
 import os
+from flask import Flask, jsonify, request, redirect, send_from_directory
 
-import ipynb
-
-# the main Flask application object
-app = Flask(__name__)
-
-# create logger instance
-logger = logging.getLogger(__name__)
-logger.setLevel('INFO')
+from app import ipynb
+from app import app, logger
 
 # global variables to store the current state of our notebook
-inputs = ['print("Type your code snippet here")']
-outputs = ['']
-execute_counters = [0]
-current_execute_count = 0
+INPUTS = ['print("Type your code snippet here")']
+OUTPUTS = ['']
+EXECUTE_COUNTERS = [0]
+CURRENT_EXECUTE_COUNT = 0
 
 
 @app.route('/favicon.ico')
@@ -30,8 +24,8 @@ def favicon():
 @app.route('/', methods=['GET'])
 def get():
     """This triggers when you first open the site with your browser"""
-    assert len(inputs) == len(outputs)
-    return ipynb.render_notebook(inputs, outputs, execute_counters)
+    assert len(INPUTS) == len(OUTPUTS)
+    return ipynb.render_notebook(INPUTS, OUTPUTS, EXECUTE_COUNTERS)
 
 
 @app.route('/execute_cell/<cell_id>', methods=['POST'])
@@ -43,27 +37,27 @@ def execute(cell_id=None):
         logger.warning(e)
         return redirect('/')
 
-    global current_execute_count
+    global CURRENT_EXECUTE_COUNT
     try:
-        current_execute_count += 1
-        execute_counters[cell_id] = current_execute_count
-        
-        inputs[cell_id] = request.form['input{}'.format(cell_id)]
-        result = ipynb.execute_snippet(inputs[cell_id], globals())
+        CURRENT_EXECUTE_COUNT += 1
+        EXECUTE_COUNTERS[cell_id] = CURRENT_EXECUTE_COUNT
+
+        INPUTS[cell_id] = request.form['input{}'.format(cell_id)]
+        result = ipynb.execute_snippet(INPUTS[cell_id], globals())
     except BaseException as e:
         # anything could happen inside, even `exit()` call
         result = str(e)
 
-    outputs[cell_id] = result
+    OUTPUTS[cell_id] = result
     return redirect('/')
 
 
 @app.route('/add_cell', methods=['POST'])
 def add_cell():
     """Appends empty cell data to the end"""
-    inputs.append('')
-    outputs.append('')
-    execute_counters.append(0)
+    INPUTS.append('')
+    OUTPUTS.append('')
+    EXECUTE_COUNTERS.append(0)
     return redirect('/')
 
 
@@ -72,9 +66,9 @@ def remove_cell(cell_id=0):
     """Removes a cell by number"""
     try:
         cell_id = int(cell_id)
-        if len(inputs) < 2:
+        if len(INPUTS) < 2:
             raise ValueError('Cannot remove the last cell')
-        if cell_id < 0 or cell_id >= len(inputs):
+        if cell_id < 0 or cell_id >= len(INPUTS):
             raise ValueError('Bad cell id')
     except ValueError as e:
         # do not change internal info
@@ -82,9 +76,9 @@ def remove_cell(cell_id=0):
         return redirect('/')
 
     # remove related data
-    inputs.pop(cell_id)
-    outputs.pop(cell_id)
-    execute_counters.pop(cell_id)
+    INPUTS.pop(cell_id)
+    OUTPUTS.pop(cell_id)
+    EXECUTE_COUNTERS.pop(cell_id)
     return redirect('/')
 
 
@@ -94,22 +88,16 @@ def ipynb_handler():
     Imports/exports notebook data in .ipynb format (a.k.a Jupyter Notebook)
     Docs: https://nbformat.readthedocs.io/en/latest/format_description.html
     """
-    global inputs
-    global outputs
+    global INPUTS, OUTPUTS
     if request.method == 'GET':
         # return json representation of the notebook here
-        return ipynb.export(inputs, outputs)
+        return ipynb.export(INPUTS, OUTPUTS)
     elif request.method == 'POST':
         # update internal data
         imported = ipynb.import_from_json(request.get_json())
         # we can return None if json is not a valid ipynb
         if imported:
-            inputs, outputs = imported
+            INPUTS, OUTPUTS = imported
         # common practice for POST/PUT is returning empty json
         # when everything is 200 OK
         return jsonify({})
-
-
-# this makes your Flask application start
-if __name__ == "__main__":
-    app.run(debug=True)

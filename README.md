@@ -9,7 +9,7 @@ http://flask.pocoo.org/docs/1.0/tutorial/
 ### Usage:
 ```
 pip3 install flask
-python3 app.py
+python3 run.py --debug
 ```
 
 Follow localhost address in your console (most likely http://127.0.0.1:5000)
