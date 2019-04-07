@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from flask import Flask, jsonify, request, redirect, send_from_directory
+import flask
 
 from app import ipynb
 from app import app, logger
@@ -15,7 +15,7 @@ CURRENT_EXECUTE_COUNT = 0
 @app.route('/favicon.ico')
 def favicon():
     """Handles browser's request for favicon"""
-    return send_from_directory(
+    return flask.send_from_directory(
         os.path.join(app.root_path, 'static'),
         'favicon.ico'
     )
@@ -35,21 +35,21 @@ def execute(cell_id=None):
         cell_id = int(cell_id)
     except ValueError as e:
         logger.warning(e)
-        return redirect('/')
+        return flask.redirect('/')
 
     global CURRENT_EXECUTE_COUNT
     try:
         CURRENT_EXECUTE_COUNT += 1
         EXECUTE_COUNTERS[cell_id] = CURRENT_EXECUTE_COUNT
 
-        INPUTS[cell_id] = request.form['input{}'.format(cell_id)]
+        INPUTS[cell_id] = flask.request.form['input{}'.format(cell_id)]
         result = ipynb.execute_snippet(INPUTS[cell_id], globals())
-    except BaseException as e:
+    except Exception as e:
         # anything could happen inside, even `exit()` call
         result = str(e)
 
     OUTPUTS[cell_id] = result
-    return redirect('/')
+    return flask.redirect('/')
 
 
 @app.route('/add_cell', methods=['POST'])
@@ -58,7 +58,7 @@ def add_cell():
     INPUTS.append('')
     OUTPUTS.append('')
     EXECUTE_COUNTERS.append(0)
-    return redirect('/')
+    return flask.redirect('/')
 
 
 @app.route('/remove_cell/<cell_id>', methods=['POST'])
@@ -73,13 +73,13 @@ def remove_cell(cell_id=0):
     except ValueError as e:
         # do not change internal info
         logger.warning(e)
-        return redirect('/')
+        return flask.redirect('/')
 
     # remove related data
     INPUTS.pop(cell_id)
     OUTPUTS.pop(cell_id)
     EXECUTE_COUNTERS.pop(cell_id)
-    return redirect('/')
+    return flask.redirect('/')
 
 
 @app.route('/ipynb', methods=['GET', 'POST'])
@@ -89,15 +89,15 @@ def ipynb_handler():
     Docs: https://nbformat.readthedocs.io/en/latest/format_description.html
     """
     global INPUTS, OUTPUTS
-    if request.method == 'GET':
+    if flask.request.method == 'GET':
         # return json representation of the notebook here
         return ipynb.export(INPUTS, OUTPUTS)
-    elif request.method == 'POST':
+    elif flask.request.method == 'POST':
         # update internal data
-        imported = ipynb.import_from_json(request.get_json())
+        imported = ipynb.import_from_json(flask.request.get_json())
         # we can return None if json is not a valid ipynb
         if imported:
             INPUTS, OUTPUTS = imported
         # common practice for POST/PUT is returning empty json
         # when everything is 200 OK
-        return jsonify({})
+        return flask.jsonify({})

@@ -2,9 +2,7 @@ import io
 import json
 import logging
 import sys
-
-from flask import jsonify, render_template
-
+import flask
 
 # create logger instance
 logger = logging.getLogger(__name__)
@@ -13,7 +11,7 @@ logger.setLevel('INFO')
 
 def render_notebook(inputs, outputs, execute_counters):
     """"""
-    return render_template(
+    return flask.render_template(
         'jupyter.html',
         cells=zip(range(len(inputs)), inputs, outputs, execute_counters)
     )
@@ -53,7 +51,7 @@ def export(inputs, outputs, filename='ipynb.json'):
         }
         ipynb_json['cells'].append(cell_json)
 
-    return jsonify(ipynb_json)
+    return flask.jsonify(ipynb_json)
 
 
 def _get_cell_output(cell_json):

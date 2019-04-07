@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-from flask import Flask
+import flask
 import logging
 
-app = Flask(__name__)
+app = flask.Flask(__name__)
 app.config['SECRET_KEY'] = 'dskjgdskfjghdskjfhdfg'
 
 # create logger instance
